@@ -52,11 +52,14 @@ public class RedgifsTokenManager {
 
     private static String getToken(String userAgent) throws IOException, JSONException {
         HttpURLConnection connection = (HttpURLConnection) new URL(GET_TEMPORARY_TOKEN).openConnection();
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
         connection.setFixedLengthStreamingMode(0);
         connection.setRequestMethod(GET.name());
         connection.setRequestProperty("User-Agent", userAgent);
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Connection", "close");
         connection.setUseCaches(false);
 
         JSONObject responseObject = Requester.parseJSONObject(connection);

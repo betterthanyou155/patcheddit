@@ -42,7 +42,8 @@ public class OkHttpRequestHook extends BaseOkHttpRequestHook {
                 new RedditSubredditUndeleteInterceptor(),
                 new RedditFixAudioInDownloadsInterceptor(),
                 new ImgurUndeleteInterceptor(),
-                new RAllPatch()
+                new RAllPatch(),
+                new RedgifsUserAgentInterceptor()
         );
     }
 
@@ -52,5 +53,21 @@ public class OkHttpRequestHook extends BaseOkHttpRequestHook {
                 new ArcticShiftThrottlingInterceptor(),
                 new WaybackThrottlingInterceptor()
         );
+    }
+
+    private static class RedgifsUserAgentInterceptor implements Interceptor {
+        @androidx.annotation.NonNull
+        @Override
+        public okhttp3.Response intercept(@androidx.annotation.NonNull Chain chain) throws java.io.IOException {
+            okhttp3.Request request = chain.request();
+            String host = request.url().host();
+            if (host != null && host.contains("redgifs.com")) {
+                okhttp3.Request modifiedRequest = request.newBuilder()
+                        .header("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
+                        .build();
+                return chain.proceed(modifiedRequest);
+            }
+            return chain.proceed(request);
+        }
     }
 }

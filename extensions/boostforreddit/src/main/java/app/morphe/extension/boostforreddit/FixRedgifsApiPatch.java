@@ -23,6 +23,11 @@ public class FixRedgifsApiPatch extends BaseFixRedgifsApiPatch {
     }
 
     public static OkHttpClient createClient() {
-        return new OkHttpClient.Builder().addInterceptor(INSTANCE).build();
+        return new OkHttpClient.Builder()
+                .connectionPool(new okhttp3.ConnectionPool(0, 1, java.util.concurrent.TimeUnit.NANOSECONDS))
+                .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                .addInterceptor(INSTANCE)
+                .build();
     }
 }

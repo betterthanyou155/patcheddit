@@ -37,14 +37,22 @@ public abstract class BaseFixRedgifsApiPatch extends PatchedditInterceptor {
         String userAgent = getDefaultUserAgent();
 
         if (request.header("Authorization") != null) {
-            Response response = chain.proceed(request.newBuilder().header("User-Agent", userAgent).build());
-            if (response.isSuccessful()) {
-                return response;
-            }
-            int code = response.code();
-            userAgent = response.request().header("User-Agent");
-            response.close();
-            if (code == 401 || code == 403) {
+            Response response = null;
+            try {
+                response = chain.proceed(request.newBuilder().header("User-Agent", userAgent).build());
+                if (response.isSuccessful()) {
+                    return response;
+                }
+                int code = response.code();
+                userAgent = response.request().header("User-Agent");
+                response.close();
+                if (code == 401 || code == 403) {
+                    RedgifsTokenManager.clearToken(userAgent);
+                }
+            } catch (IOException e) {
+                if (response != null) {
+                    response.close();
+                }
                 RedgifsTokenManager.clearToken(userAgent);
             }
         }
