@@ -13,3 +13,15 @@ internal val downloadAudioFingerprint = Fingerprint(
     strings = listOf("/DASH_audio.mp4", "/audio")
 )
 
+internal val mediaActivityM1Fingerprint = Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/MediaActivity;",
+    name = "M1",
+    parameters = listOf("Landroid/view/View;")
+)
+
+internal val mediaActivityZ1Fingerprint = Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/MediaActivity;",
+    name = "z1",
+    parameters = listOf("Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;")
+)
+

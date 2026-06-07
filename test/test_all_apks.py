@@ -80,11 +80,13 @@ def find_latest_patch_bundle(directory: Path) -> Path:
 
 def rebuild_patches() -> None:
     """Run ./gradlew buildAndroid to rebuild the patch bundle."""
+    import os
     print("=" * 60)
     print("Rebuilding patch bundle (./gradlew buildAndroid) ...")
     print("=" * 60)
+    gradle_cmd = "./gradlew" if os.name != "nt" else "gradlew.bat"
     result = subprocess.run(
-        ["./gradlew", "buildAndroid"],
+        [gradle_cmd, "buildAndroid"],
         cwd=PROJECT_DIR,
     )
     if result.returncode != 0:
