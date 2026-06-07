@@ -41,10 +41,12 @@ public abstract class BaseFixRedgifsApiPatch extends PatchedditInterceptor {
             if (response.isSuccessful()) {
                 return response;
             }
-            // It's possible that the user agent is being overwritten later down in the interceptor
-            // chain, so make sure we grab the new user agent from the request headers.
+            int code = response.code();
             userAgent = response.request().header("User-Agent");
             response.close();
+            if (code == 401 || code == 403) {
+                RedgifsTokenManager.clearToken(userAgent);
+            }
         }
 
         try {
@@ -68,7 +70,18 @@ public abstract class BaseFixRedgifsApiPatch extends PatchedditInterceptor {
                     .header("Authorization", "Bearer " + token.getAccessToken())
                     .header("User-Agent", userAgent)
                     .build();
-            return chain.proceed(modifiedRequest);
+            Response response = chain.proceed(modifiedRequest);
+            if (response.code() == 401 || response.code() == 403) {
+                response.close();
+                RedgifsTokenManager.clearToken(userAgent);
+                token = RedgifsTokenManager.refreshToken(userAgent);
+                modifiedRequest = request.newBuilder()
+                        .header("Authorization", "Bearer " + token.getAccessToken())
+                        .header("User-Agent", userAgent)
+                        .build();
+                return chain.proceed(modifiedRequest);
+            }
+            return response;
         } catch (JSONException ex) {
             Logger.printException(() -> "Could not parse Redgifs response", ex);
             throw new IOException(ex);

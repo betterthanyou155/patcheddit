@@ -81,6 +81,12 @@ public class RedgifsTokenManager {
         }
     }
 
+    public static void clearToken(String userAgent) {
+        synchronized(tokenMap) {
+            tokenMap.remove(userAgent);
+        }
+    }
+
     public static String getEmulatedOAuthResponseBody(RedgifsToken token) throws JSONException {
         // Reference: https://github.com/JeffreyCA/Apollo-ImprovedCustomApi/pull/67
         JSONObject responseObject = new JSONObject();

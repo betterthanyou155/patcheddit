@@ -19,8 +19,7 @@ public class FixRedgifsApiPatch extends BaseFixRedgifsApiPatch {
     }
 
     public String getDefaultUserAgent() {
-        // Boost uses a static user agent for Redgifs API calls
-        return "Boost";
+        return "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
     }
 
     public static OkHttpClient createClient() {
