@@ -73,23 +73,47 @@ public class DownloadAllUtils {
     }
 
     /**
-     * Returns true if the click was handled (Download All), false otherwise.
-     * The parameter type is Object to match the erased bytecode type, but is always a MenuOption.
+     * Full replacement for MediaActivity.z1's dispatch logic.
+     * Handles our custom Download All option AND reflectively calls the original
+     * A1/B1/C1 methods for all standard option IDs.
+     *
+     * Using a void static method avoids any move-result or new local registers
+     * in the z1 hook, which would corrupt the register frame and cause VerifyError.
+     *
+     * Option IDs from the original sparse-switch in z1:
+     *   0x7f0a004f -> A1()  (share)
+     *   0x7f0a00a0 -> B1()  (unknown)
+     *   0x7f0a00a1 -> C1()  (unknown)
+     *   0x7f0a7777 -> our Download All
      */
-    public static boolean handleMenuClick(Activity activity, Object option) {
+    public static void handleAndDispatch(Activity activity, Object option) {
         try {
             Class<?> menuOptionClass = Class.forName("com.rubenmayayo.reddit.ui.customviews.menu.MenuOption");
-            Method qMethod = menuOptionClass.getMethod("q");
-            int optionId = (Integer) qMethod.invoke(option);
+            int optionId = (Integer) menuOptionClass.getMethod("q").invoke(option);
 
             if (optionId == DOWNLOAD_ALL_OPTION_ID) {
                 downloadAll(activity);
-                return true;
+                return;
+            }
+
+            // Reflectively call the original dispatch methods from MediaActivity
+            Class<?> mediaActivityClass = Class.forName("com.rubenmayayo.reddit.ui.activities.MediaActivity");
+            String methodName = null;
+            if (optionId == 0x7f0a004f) {
+                methodName = "A1";
+            } else if (optionId == 0x7f0a00a0) {
+                methodName = "B1";
+            } else if (optionId == 0x7f0a00a1) {
+                methodName = "C1";
+            }
+            if (methodName != null) {
+                Method m = mediaActivityClass.getDeclaredMethod(methodName);
+                m.setAccessible(true);
+                m.invoke(activity);
             }
         } catch (Exception e) {
-            LoggingUtils.logException(false, () -> "Failed to handle menu click: " + e);
+            LoggingUtils.logException(false, () -> "Failed to dispatch menu click: " + e);
         }
-        return false;
     }
 
     private static void downloadAll(Activity activity) {

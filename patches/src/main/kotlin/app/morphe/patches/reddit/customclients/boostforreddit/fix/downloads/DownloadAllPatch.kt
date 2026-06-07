@@ -7,11 +7,9 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.downloads
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.boostforreddit.BoostCompatible
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.sharedExtensionPatch
 import app.morphe.util.getReference
@@ -46,20 +44,31 @@ val downloadAllPatch = bytecodePatch(
         }
 
         // Patch MediaActivity.z1 to handle clicks on the custom option.
-        // We use a v register (boolean) for the result so p1 (MenuOption) type is never polluted.
-        // This prevents VerifyError from the Dalvik verifier seeing p1 as Object instead of MenuOption.
+        //
+        // ROOT CAUSE OF ALL PREVIOUS CRASHES:
+        // z1 has .locals 0 (no local registers). Any addInstructionsWithLabels call that
+        // introduces a new v-register bumps .locals from 0 to 1, which SHIFTS the absolute
+        // register indices of p0 and p1 by +1. The patcher does NOT remap existing instructions,
+        // so the original code starts using the wrong registers → VerifyError at runtime.
+        //
+        // THE FIX:
+        // Use replaceInstruction to swap the first instruction (invoke-virtual q()I → int result)
+        // with our void static dispatch. Then insert return-void right after. This adds ZERO new
+        // registers — .locals stays 0 — and p1 is always seen as MenuOption by the verifier.
+        // The rest of z1 (move-result, sparse-switch, handlers) becomes dead code after return-void.
         mediaActivityZ1Fingerprint.method.apply {
-            addInstructionsWithLabels(
+            // Replace: invoke-virtual {p1}, MenuOption->q()I
+            // With:    invoke-static  {p0, p1}, handleAndDispatch(Activity, Object)V
+            replaceInstruction(
                 0,
-                """
-                    invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleMenuClick(Landroid/app/Activity;Ljava/lang/Object;)Z
-                    move-result v0
-                    if-eqz v0, :continue
-                    return-void
-                """,
-                ExternalLabel("continue", getInstruction(0))
+                "invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleAndDispatch(Landroid/app/Activity;Ljava/lang/Object;)V"
+            )
+            // Insert return-void at index 1 (before the original move-result p1).
+            // Dead code after here is fine — the verifier/ART handles it gracefully.
+            addInstruction(
+                1,
+                "return-void"
             )
         }
     }
 }
-
