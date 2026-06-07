@@ -54,8 +54,9 @@ val downloadAllPatch = bytecodePatch(
                     move-result-object p1
                     if-nez p1, :continue
                     return-void
-                """,
-                ExternalLabel("continue", getInstruction(0))
+                    :continue
+                    check-cast p1, Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;
+                """
             )
         }
     }
