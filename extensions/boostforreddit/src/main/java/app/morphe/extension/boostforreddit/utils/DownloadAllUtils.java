@@ -72,7 +72,11 @@ public class DownloadAllUtils {
         }
     }
 
-    public static Object handleMenuClick(Activity activity, Object option) {
+    /**
+     * Returns true if the click was handled (Download All), false otherwise.
+     * The parameter type is Object to match the erased bytecode type, but is always a MenuOption.
+     */
+    public static boolean handleMenuClick(Activity activity, Object option) {
         try {
             Class<?> menuOptionClass = Class.forName("com.rubenmayayo.reddit.ui.customviews.menu.MenuOption");
             Method qMethod = menuOptionClass.getMethod("q");
@@ -80,12 +84,12 @@ public class DownloadAllUtils {
 
             if (optionId == DOWNLOAD_ALL_OPTION_ID) {
                 downloadAll(activity);
-                return null;
+                return true;
             }
         } catch (Exception e) {
             LoggingUtils.logException(false, () -> "Failed to handle menu click: " + e);
         }
-        return option;
+        return false;
     }
 
     private static void downloadAll(Activity activity) {

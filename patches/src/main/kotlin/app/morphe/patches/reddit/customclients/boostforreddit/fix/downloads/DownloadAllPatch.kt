@@ -46,18 +46,20 @@ val downloadAllPatch = bytecodePatch(
         }
 
         // Patch MediaActivity.z1 to handle clicks on the custom option.
+        // We use a v register (boolean) for the result so p1 (MenuOption) type is never polluted.
+        // This prevents VerifyError from the Dalvik verifier seeing p1 as Object instead of MenuOption.
         mediaActivityZ1Fingerprint.method.apply {
             addInstructionsWithLabels(
                 0,
                 """
-                    invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleMenuClick(Landroid/app/Activity;Ljava/lang/Object;)Ljava/lang/Object;
-                    move-result-object p1
-                    if-nez p1, :continue
+                    invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleMenuClick(Landroid/app/Activity;Ljava/lang/Object;)Z
+                    move-result v0
+                    if-eqz v0, :continue
                     return-void
-                    :continue
-                    check-cast p1, Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;
-                """
+                """,
+                ExternalLabel("continue", getInstruction(0))
             )
         }
     }
 }
+
